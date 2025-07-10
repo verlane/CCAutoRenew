@@ -6,6 +6,7 @@
 LOG_FILE="$HOME/.claude-auto-renew-daemon.log"
 PID_FILE="$HOME/.claude-auto-renew-daemon.pid"
 LAST_ACTIVITY_FILE="$HOME/.claude-last-activity"
+START_TIME_FILE="$HOME/.claude-auto-renew-start-time"
 
 # Function to log messages
 log_message() {
@@ -21,6 +22,41 @@ cleanup() {
 
 # Set up signal handlers
 trap cleanup SIGTERM SIGINT
+
+# Function to check if we're past the start time
+is_start_time_reached() {
+    if [ ! -f "$START_TIME_FILE" ]; then
+        # No start time set, always active
+        return 0
+    fi
+    
+    local start_epoch=$(cat "$START_TIME_FILE")
+    local current_epoch=$(date +%s)
+    
+    if [ "$current_epoch" -ge "$start_epoch" ]; then
+        return 0  # Start time reached
+    else
+        return 1  # Still waiting
+    fi
+}
+
+# Function to get time until start
+get_time_until_start() {
+    if [ ! -f "$START_TIME_FILE" ]; then
+        echo "0"
+        return
+    fi
+    
+    local start_epoch=$(cat "$START_TIME_FILE")
+    local current_epoch=$(date +%s)
+    local diff=$((start_epoch - current_epoch))
+    
+    if [ "$diff" -le 0 ]; then
+        echo "0"
+    else
+        echo "$diff"
+    fi
+}
 
 # Function to get ccusage command
 get_ccusage_cmd() {
@@ -164,6 +200,14 @@ main() {
     log_message "PID: $$"
     log_message "Logs: $LOG_FILE"
     
+    # Check for start time
+    if [ -f "$START_TIME_FILE" ]; then
+        start_epoch=$(cat "$START_TIME_FILE")
+        log_message "Start time configured: $(date -d "@$start_epoch" 2>/dev/null || date -r "$start_epoch")"
+    else
+        log_message "No start time set - will begin monitoring immediately"
+    fi
+    
     # Check ccusage availability
     if ! get_ccusage_cmd &> /dev/null; then
         log_message "WARNING: ccusage not found. Using time-based checking."
@@ -172,6 +216,38 @@ main() {
     
     # Main loop
     while true; do
+        # Check if we're past start time
+        if ! is_start_time_reached; then
+            time_until_start=$(get_time_until_start)
+            hours=$((time_until_start / 3600))
+            minutes=$(((time_until_start % 3600) / 60))
+            seconds=$((time_until_start % 60))
+            
+            if [ "$hours" -gt 0 ]; then
+                log_message "Waiting for start time (${hours}h ${minutes}m remaining)..."
+                sleep 300  # Check every 5 minutes when waiting
+            elif [ "$minutes" -gt 2 ]; then
+                log_message "Waiting for start time (${minutes}m ${seconds}s remaining)..."
+                sleep 60   # Check every minute when close
+            elif [ "$time_until_start" -gt 10 ]; then
+                log_message "Waiting for start time (${minutes}m ${seconds}s remaining)..."
+                sleep 10   # Check every 10 seconds when very close
+            else
+                log_message "Waiting for start time (${seconds}s remaining)..."
+                sleep 2    # Check every 2 seconds when imminent
+            fi
+            continue
+        fi
+        
+        # If we just reached start time, log it
+        if [ -f "$START_TIME_FILE" ]; then
+            # Check if this is the first time we're active
+            if [ ! -f "${START_TIME_FILE}.activated" ]; then
+                log_message "✅ Start time reached! Beginning auto-renewal monitoring..."
+                touch "${START_TIME_FILE}.activated"
+            fi
+        fi
+        
         # Get minutes until reset
         minutes_remaining=$(get_minutes_until_reset)
         

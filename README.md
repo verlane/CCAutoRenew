@@ -24,24 +24,25 @@ This tool ensures you automatically start a new session right when your block ex
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cc-auto-pilot.git
-cd cc-auto-pilot
+git clone https://github.com/aniketkarne/CCAutoRenew.git
+cd CCAutoRenew
 
 # Make scripts executable
 chmod +x *.sh
 
-# Run quick test
-./test-quick.sh
+# Interactive setup (recommended)
+./setup-claude-cron.sh
 
-# Start the daemon
+# OR manual daemon start
 ./claude-daemon-manager.sh start
+./claude-daemon-manager.sh start --at "09:00"  # with start time
 ```
 
 That's it! The daemon will now run in the background and automatically renew your Claude sessions.
 
 ## 📋 Prerequisites
 
-- [Claude CLI](https://claude.ai/claude-code) installed and authenticated
+- [Claude CLI](https://www.anthropic.com/claude-code) installed and authenticated
 - Bash 4.0+ (pre-installed on macOS/Linux)
 - (Optional) [ccusage](https://github.com/ryoppippi/ccusage) for precise timing
 
@@ -71,7 +72,7 @@ bunx ccusage
 
 ```bash
 # Clone this repository
-git clone https://github.com/yourusername/cc-autorenew.git
+git clone https://github.com/aniketkarne/CCAutoRenew.git
 cd cc-autorenew
 
 # Make all scripts executable
@@ -89,6 +90,10 @@ chmod +x *.sh
 # Start the auto-renewal daemon
 ./claude-daemon-manager.sh start
 
+# Start with scheduled activation time
+./claude-daemon-manager.sh start --at "09:00"
+./claude-daemon-manager.sh start --at "2025-01-28 14:30"
+
 # Check daemon status
 ./claude-daemon-manager.sh status
 
@@ -101,8 +106,9 @@ chmod +x *.sh
 # Stop the daemon
 ./claude-daemon-manager.sh stop
 
-# Restart the daemon
+# Restart the daemon (with same start time if previously set)
 ./claude-daemon-manager.sh restart
+./claude-daemon-manager.sh restart --at "10:00"  # new start time
 ```
 
 ### How It Works
@@ -121,6 +127,27 @@ The daemon adjusts its checking frequency based on time remaining:
 - **< 5 minutes**: Every 30 seconds
 - **After renewal**: 5-minute cooldown
 
+## 🧪 Testing
+
+Run the test suite to verify everything is working:
+
+```bash
+# Quick test (< 1 minute)
+./test-quick.sh
+
+# Comprehensive test suite (includes start-time feature)
+./test-start-time-feature.sh
+
+# Legacy comprehensive test
+./test-claude-renewal.sh
+```
+
+The new comprehensive test includes:
+- ✅ Start-time functionality validation
+- ✅ Daemon status with scheduling
+- ✅ File management and cleanup
+- ✅ Integration tests with real timing
+- ✅ All existing functionality tests
 
 ## 📁 Project Structure
 
@@ -129,9 +156,9 @@ cc-autorenew/
 ├── claude-daemon-manager.sh      # Main control script
 ├── claude-auto-renew-daemon.sh   # Core daemon process
 ├── claude-auto-renew-advanced.sh # Standalone renewal script
-├── setup-claude-cron.sh          # Alternative cron setup
-├── test-claude-renewal.sh        # Comprehensive test suite
-├── test-quick.sh                 # Quick verification test
+├── claude-auto-renew.sh          # Basic renewal script
+├── setup-claude-cron.sh          # Interactive setup (daemon/cron)
+├── test-start-time-feature.sh    # New comprehensive test suite
 ├── reddit.md                     # Reddit post about the project
 └── README.md                     # This file
 ```
