@@ -1,6 +1,6 @@
 # CC AutoRenew 🚀
 
-> Never miss a Claude Code renewal window again! Automatically maintains your 5-hour usage blocks.
+> Never miss a Claude Code renewal window again! Automatically maintains your 5-hour usage blocks with optional scheduled start times.
 
 ## 🎯 Problem
 
@@ -14,9 +14,10 @@ This tool ensures you automatically start a new session right when your block ex
 ## ✨ Features
 
 - 🔄 **Automatic Renewal** - Starts Claude sessions exactly when needed
+- ⏰ **Scheduled Start Times** - Set when daemon begins monitoring (`--at "09:00"` or `--at "2025-01-28 14:30"`)
 - 📊 **Smart Monitoring** - Integrates with [ccusage](https://github.com/ryoppippi/ccusage) for accurate timing
 - 🎯 **Intelligent Scheduling** - Checks more frequently as renewal approaches
-- 📝 **Detailed Logging** - Track all renewal activities
+- 📝 **Detailed Logging** - Track all renewal activities with WAITING/ACTIVE states
 - 🛡️ **Failsafe Design** - Multiple fallback mechanisms
 - 🖥️ **Cross-platform** - Works on macOS and Linux
 
@@ -53,7 +54,7 @@ That's it! The daemon will now run in the background and automatically renew you
 First, ensure you have Claude Code installed:
 ```bash
 # Follow the official installation guide
-# https://claude.ai/claude-code
+    # https://www.anthropic.com/claude-code
 ```
 
 ### 2. Install ccusage (Optional but Recommended)
