@@ -250,15 +250,30 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+### 📄 Attribution Guidelines
+
+When forking or redistributing this project, please:
+- Keep original attribution in README acknowledgments
+- Maintain the MIT License and copyright notice
+- Add your own contributions to the acknowledgments section
+- Follow standard open source attribution practices
+
 ## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
+### 👨‍💻 Original Author
+- **Aniket Karne** - [@aniketkarne](https://github.com/aniketkarne) - Original concept, core development, and start-time scheduling feature
+
+### 🛠️ Dependencies & Tools
 - [ccusage](https://github.com/ryoppippi/ccusage) by @ryoppippi for accurate usage tracking
 - Claude Code team for the amazing coding assistant
+
+### 🌟 Community
 - Community feedback and contributions
+- Open source contributors and testers
 
 ## 💡 Tips
 
