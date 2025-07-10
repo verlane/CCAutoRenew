@@ -9,7 +9,12 @@ Claude Code operates on a 5-hour subscription model that renews from your first 
 - Don't use Claude again until 11:01pm
 - Your next block runs 11pm-4am (missing an hour!)
 
-This tool ensures you automatically start a new session right when your block expires, maximizing your available Claude time.
+**Session Burning Problem:** Starting the daemon at random times can waste precious hours of your block. If you want to code from 9am-2pm but start the daemon at 6am, you've burned 3 hours!
+
+**Solution:** CC AutoRenew prevents both gaps AND session burning:
+- 🚫 **Prevents Gaps** - Automatically starts new sessions when blocks expire
+- ⏰ **Prevents Session Burning** - Schedule when monitoring begins (`--at "09:00"`) 
+- 🎯 **Perfect Timing** - Start your 5-hour block exactly when you need it
 
 ## ✨ Features
 
@@ -119,6 +124,23 @@ chmod +x *.sh
 3. **Waits** until just after expiration
 4. **Starts** a minimal Claude session ("hi" command)
 5. **Logs** all activities for transparency
+
+### 💡 Avoid Session Burning
+
+**Problem:** Starting daemon at wrong time wastes your 5-hour block
+```bash
+# BAD: Start daemon at 6am but want to code 9am-2pm = 3 hours wasted!
+./claude-daemon-manager.sh start
+
+# GOOD: Schedule daemon to start monitoring at 9am
+./claude-daemon-manager.sh start --at "09:00"
+# Your 5-hour block: 9am-2pm (perfect timing!)
+```
+
+**Use Cases:**
+- 🌅 **Morning Coder**: `--at "09:00"` for 9am-2pm coding sessions
+- 🌙 **Night Owl**: `--at "18:00"` for 6pm-11pm evening coding
+- 📅 **Planned Session**: `--at "2025-01-28 14:30"` for specific date/time
 
 ### Monitoring Schedule
 
