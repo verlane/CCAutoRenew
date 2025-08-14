@@ -2,6 +2,17 @@
 
 > Never miss a Claude Code renewal window again! Automatically maintains your 5-hour usage blocks with smart daily scheduling and blackout periods.
 
+## 🔄 Key Difference from Original
+
+**Original Code**: "언제부터 시작" (When to start monitoring)
+- `--at "09:00"` means start monitoring at 9am, then renew every 5 hours continuously
+- Example: 09:00 → 14:00 → 19:00 → 00:00 → 05:00 → 10:00...
+
+**Enhanced Version**: "매일 정해진 시간에 갱신" (Daily fixed-time renewals)
+- `--at "09:00"` means renew at 9am daily, with 4 scheduled times per day
+- Example: 09:00 → 14:00 → 19:00 → 00:00 → [blackout 04:00-08:59] → 09:00 next day
+- Prevents session burning by avoiding renewals 5 hours before your target time
+
 ## 🎯 Problem
 
 Claude Code operates on a 5-hour subscription model that renews from your first message. If you:
