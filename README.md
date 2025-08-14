@@ -1,6 +1,6 @@
 # CC AutoRenew 🚀
 
-> Never miss a Claude Code renewal window again! Automatically maintains your 5-hour usage blocks with optional scheduled start times.
+> Never miss a Claude Code renewal window again! Automatically maintains your 5-hour usage blocks with smart daily scheduling and blackout periods.
 
 ## 🎯 Problem
 
@@ -19,11 +19,13 @@ Claude Code operates on a 5-hour subscription model that renews from your first 
 ## ✨ Features
 
 - 🔄 **Automatic Renewal** - Starts Claude sessions exactly when needed
-- ⏰ **Scheduled Start Times** - Set when daemon begins monitoring (`--at "09:00"` or `--at "2025-01-28 14:30"`)
+- ⏰ **Daily Schedule Mode** - Renews at fixed times (e.g., 06:00, 11:00, 16:00, 21:00)
+- 🚫 **Blackout Period Protection** - Prevents renewals before scheduled start time
 - 📊 **Smart Monitoring** - Integrates with [ccusage](https://github.com/ryoppippi/ccusage) for accurate timing
-- 🎯 **Intelligent Scheduling** - Checks more frequently as renewal approaches
-- 📝 **Detailed Logging** - Track all renewal activities with WAITING/ACTIVE states
-- 🛡️ **Failsafe Design** - Multiple fallback mechanisms
+- 🆘 **Emergency Renewal** - Prevents block expiry with 2-minute warning (respects blackout)
+- 🎯 **Intelligent Check Intervals** - Adaptive checking based on time remaining
+- 📝 **Detailed Logging** - Track all renewal activities with clear status messages
+- 🛡️ **Failsafe Design** - Multiple retry mechanisms with up to 10 attempts
 - 🖥️ **Cross-platform** - Works on macOS and Linux
 
 ## 🚀 Quick Start
@@ -119,11 +121,20 @@ chmod +x *.sh
 
 ### How It Works
 
-1. **Monitors** your Claude usage using ccusage (or time-based fallback)
-2. **Detects** when your 5-hour block is about to expire
-3. **Waits** until just after expiration
-4. **Starts** a minimal Claude session ("hi" command)
-5. **Logs** all activities for transparency
+#### Schedule Mode (--at parameter)
+When you set a start time (e.g., `--at "06:00"`), the daemon creates a daily schedule:
+- **06:00** - First renewal (start time)
+- **11:00** - Second renewal (+5 hours)
+- **16:00** - Third renewal (+5 hours)
+- **21:00** - Fourth renewal (+5 hours)
+- **01:00-05:59** - Blackout period (no renewals to preserve 06:00 slot)
+
+#### Smart Features
+1. **Blackout Period**: 5 hours before start time, no renewals occur
+2. **Emergency Renewal**: If block expires outside blackout, renews immediately
+3. **Adaptive Checking**: More frequent checks as renewal time approaches
+4. **Retry Logic**: Up to 10 attempts if renewal fails
+5. **ccusage Integration**: Real-time block status monitoring
 
 ### 💡 Avoid Session Burning
 
@@ -144,11 +155,23 @@ chmod +x *.sh
 
 ### Monitoring Schedule
 
-The daemon adjusts its checking frequency based on time remaining:
-- **Normal**: Every 10 minutes
-- **< 30 minutes**: Every 2 minutes  
-- **< 5 minutes**: Every 30 seconds
-- **After renewal**: 5-minute cooldown
+The daemon intelligently adjusts checking frequency:
+
+#### Normal Operation
+- **> 30 minutes**: Every 30 minutes
+- **10-30 minutes**: Every 10 minutes
+- **2-10 minutes**: Every 5 minutes
+- **< 2 minutes**: Every minute
+
+#### During Blackout Period
+- **> 10 minutes before start**: Every 30 minutes
+- **< 10 minutes before start**: Every 2 minutes
+
+#### Based on ccusage
+- **> 30 minutes remaining**: Every 30 minutes
+- **10-30 minutes remaining**: Every 5 minutes
+- **3-10 minutes remaining**: Every 2 minutes
+- **< 3 minutes remaining**: Every 30 seconds
 
 ## 🧪 Testing
 
@@ -266,6 +289,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### 👨‍💻 Original Author
 - **Aniket Karne** - [@aniketkarne](https://github.com/aniketkarne) - Original concept, core development, and start-time scheduling feature
+
+### 🚀 Major Contributors
+- **Verlane** - [@verlane](https://github.com/verlane) - Enhanced scheduling with blackout periods, emergency renewal logic, intelligent retry mechanisms, and adaptive check intervals
 
 ### 🛠️ Dependencies & Tools
 - [ccusage](https://github.com/ryoppippi/ccusage) by @ryoppippi for accurate usage tracking
