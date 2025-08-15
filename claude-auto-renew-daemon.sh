@@ -260,19 +260,31 @@ main() {
             
             # Check if we're at a scheduled renewal time (05:00, 10:00, 15:00, 20:00)
             if [ $time_since_start -ge 0 ]; then
-                # Calculate today's renewal times
-                today_start_epoch=$((start_epoch + ((current_epoch - start_epoch) / 86400) * 86400))
+                # Get the hour and minute from the original start time
+                start_hour=$(date -d "@$start_epoch" +%H 2>/dev/null || date -r "$start_epoch" +%H)
+                start_minute=$(date -d "@$start_epoch" +%M 2>/dev/null || date -r "$start_epoch" +%M)
                 
-                # Check if we're within 60 seconds of any scheduled renewal time
+                # Get current date at midnight
+                current_date=$(date +%Y-%m-%d)
+                
+                # Calculate today's start time
+                today_start_epoch=$(date -d "$current_date $start_hour:$start_minute:00" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "$current_date $start_hour:$start_minute:00" +%s)
+                
+                # Check if we're within 2 minutes of any scheduled renewal time (before or after)
                 for offset in 0 18000 36000 54000; do
                     renewal_time=$((today_start_epoch + offset))
                     time_diff=$((current_epoch - renewal_time))
+                    abs_time_diff=${time_diff#-}  # absolute value
                     
-                    # If we're within 60 seconds after a renewal time
-                    if [ $time_diff -ge 0 ] && [ $time_diff -le 60 ]; then
+                    # If we're within 2 minutes before or after a renewal time
+                    if [ "$abs_time_diff" -le 120 ]; then
                         should_renew=true
                         renewal_hour=$(date -d "@$renewal_time" +%H:%M 2>/dev/null || date -r "$renewal_time" +%H:%M)
-                        log_message "✅ Scheduled renewal time reached! ($renewal_hour)"
+                        if [ $time_diff -lt 0 ]; then
+                            log_message "✅ Scheduled renewal time approaching! ($renewal_hour in $((abs_time_diff/60)) minutes)"
+                        else
+                            log_message "✅ Scheduled renewal time reached! ($renewal_hour)"
+                        fi
                         break
                     fi
                 done

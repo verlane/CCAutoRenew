@@ -94,6 +94,14 @@ else
     print_fail "Invalid time format not properly handled"
 fi
 
+# Test 5b: Test blackout period calculation
+print_test "Testing blackout period feature"
+if grep -q "blackout\|Blackout" ./claude-auto-renew-daemon.sh; then
+    print_pass "Blackout period logic present"
+else
+    print_fail "Blackout period logic missing"
+fi
+
 # Test 6: Check log file creation capability
 print_test "Testing log file access"
 test_log="/tmp/cc-autorenew-test-$$"
@@ -132,6 +140,22 @@ else
     else
         print_fail "Setup script doesn't validate input properly"
     fi
+fi
+
+# Test 9: Test enhanced scheduling features
+print_test "Testing enhanced scheduling features"
+if grep -q "today_start_epoch\|scheduled_remaining" ./claude-auto-renew-daemon.sh; then
+    print_pass "Daily fixed-schedule logic present"
+else
+    print_fail "Daily fixed-schedule logic missing"
+fi
+
+# Test 10: Test retry mechanism
+print_test "Testing retry mechanism"
+if grep -q "max_retries\|retry_count" ./claude-auto-renew-daemon.sh; then
+    print_pass "Retry mechanism implemented"
+else
+    print_fail "Retry mechanism missing"
 fi
 
 # Summary

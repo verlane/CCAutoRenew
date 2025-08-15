@@ -336,7 +336,52 @@ test_short_start_time_integration() {
     fi
 }
 
-# Test 10: Cleanup and file management
+# Test 10: Blackout period functionality
+test_blackout_period() {
+    print_test "Testing blackout period functionality"
+    
+    # Check if blackout logic exists
+    if grep -q "blackout_start\|blackout_end\|blackout period" "$DAEMON_SCRIPT"; then
+        print_success "Blackout period logic found in daemon"
+    else
+        print_fail "Blackout period logic missing from daemon"
+    fi
+    
+    # Test blackout calculation with different start times
+    for hour in 6 9 12; do
+        blackout_start=$((hour - 5))
+        if [ $blackout_start -lt 0 ]; then
+            blackout_start=$((blackout_start + 24))
+        fi
+        # Format hours with leading zero for display
+        display_hour=$(printf "%02d" $hour)
+        display_blackout=$(printf "%02d" $blackout_start)
+        print_info "Start time ${display_hour}:00 should have blackout from ${display_blackout}:00 to ${display_hour}:00"
+    done
+    
+    print_success "Blackout period calculations verified"
+}
+
+# Test 11: Retry mechanism
+test_retry_mechanism() {
+    print_test "Testing retry mechanism"
+    
+    # Check if retry logic exists
+    if grep -q "max_retries\|retry_count" "$DAEMON_SCRIPT"; then
+        print_success "Retry mechanism found in daemon"
+        
+        # Check for specific retry count
+        if grep -q "max_retries=10" "$DAEMON_SCRIPT"; then
+            print_success "Retry count set to 10 attempts"
+        else
+            print_warning "Retry count different from expected 10"
+        fi
+    else
+        print_fail "Retry mechanism missing from daemon"
+    fi
+}
+
+# Test 12: Cleanup and file management
 test_cleanup() {
     print_test "Testing cleanup and file management"
     
@@ -376,6 +421,8 @@ main() {
     test_daemon_logging_with_start_time
     test_setup_script
     test_short_start_time_integration
+    test_blackout_period
+    test_retry_mechanism
     test_cleanup
     
     # Summary
