@@ -9,11 +9,12 @@
 - Example: 09:00 → 14:00 → 19:00 → 00:00 → 05:00 → 10:00...
 - Simple continuous renewal every 5 hours
 
-**Enhanced Version**: Daily fixed-schedule renewals
+**Enhanced Version**: Daily fixed-schedule renewals with guaranteed execution
 - `--at "09:00"` means renew at 9am daily, with exactly 4 scheduled times per day
 - Example: 09:00 → 14:00 → 19:00 → 00:00 → [blackout 04:00-08:59] → 09:00 next day
+- **Scheduled times ALWAYS execute** regardless of ccusage status
 - Prevents session burning with intelligent blackout period (5 hours before start time)
-- Guarantees predictable renewal times every day
+- Emergency renewals only outside blackout period when blocks expire unexpectedly
 
 ## 🎯 Problem
 
@@ -33,10 +34,11 @@ Claude Code operates on a 5-hour subscription model that renews from your first 
 
 - 🔄 **Automatic Renewal** - Starts Claude sessions exactly when needed
 - ⏰ **Daily Schedule Mode** - Renews at fixed times (e.g., 06:00, 11:00, 16:00, 21:00)
+- ⚡ **Guaranteed Execution** - Scheduled times ALWAYS renew regardless of ccusage status
 - 🚫 **Blackout Period Protection** - Prevents renewals 5 hours before scheduled start time
 - 📊 **Smart Monitoring** - Integrates with [ccusage](https://github.com/ryoppippi/ccusage) for accurate timing
 - 🆘 **Emergency Renewal** - Prevents block expiry with 2-minute warning (respects blackout)
-- 🎯 **Flexible Renewal Window** - ±2 minute window ensures scheduled renewals aren't missed
+- 🎯 **Wide Renewal Window** - ±5 minute window ensures scheduled renewals aren't missed
 - 📝 **Detailed Logging** - Track all renewal activities with blackout notifications
 - 🛡️ **Robust Retry Logic** - Up to 10 retry attempts with 1-minute intervals
 - 🖥️ **Cross-platform** - Works on macOS and Linux
@@ -143,12 +145,13 @@ When you set a start time (e.g., `--at "06:00"`), the daemon creates a daily sch
 - **01:00-05:59** - Blackout period (no renewals to preserve 06:00 slot)
 
 #### Smart Features
-1. **Blackout Period**: 5 hours before start time, no renewals occur to guarantee start time availability
-2. **Emergency Renewal**: If block expires outside blackout, renews immediately (2-minute warning)
-3. **Flexible Window**: ±2 minute window for scheduled renewals prevents missing due to timing
-4. **Robust Retry**: Up to 10 attempts with 1-minute intervals if renewal fails
-5. **Adaptive Intervals**: Check frequency adjusts based on time remaining and blackout status
-6. **ccusage Integration**: Real-time block status with fallback to time-based tracking
+1. **Guaranteed Execution**: Scheduled times (06:00, 11:00, 16:00, 21:00) ALWAYS execute regardless of ccusage
+2. **Blackout Period**: 5 hours before start time, no renewals occur to guarantee start time availability
+3. **Emergency Renewal**: If block expires outside blackout, renews immediately (2-minute warning)
+4. **Wide Window**: ±5 minute window for scheduled renewals prevents missing due to timing delays
+5. **Robust Retry**: Up to 10 attempts with 1-minute intervals if renewal fails
+6. **Priority Scheduling**: Scheduled renewals override ccusage recommendations within 5-minute window
+7. **Adaptive Intervals**: Check frequency adjusts based on time remaining and blackout status
 
 ### 💡 Avoid Session Burning
 
@@ -171,21 +174,22 @@ When you set a start time (e.g., `--at "06:00"`), the daemon creates a daily sch
 
 The daemon intelligently adjusts checking frequency:
 
-#### Normal Operation
-- **> 30 minutes**: Every 30 minutes
-- **10-30 minutes**: Every 10 minutes
-- **2-10 minutes**: Every 5 minutes
-- **< 2 minutes**: Every minute
+#### Scheduled Renewal Priority
+- **Within 5 minutes of scheduled time**: Every minute (guaranteed execution)
+- **5-10 minutes before scheduled**: Every 2 minutes
+- **10-30 minutes before scheduled**: Every 5 minutes
+- **> 30 minutes before scheduled**: Every 30 minutes
 
 #### During Blackout Period
+- **5 minutes before start**: Every minute
+- **10 minutes before start**: Every 2 minutes
 - **> 10 minutes before start**: Every 30 minutes
-- **< 10 minutes before start**: Every 2 minutes
 
-#### Based on ccusage
+#### Emergency Renewal (based on ccusage)
 - **> 30 minutes remaining**: Every 30 minutes
 - **10-30 minutes remaining**: Every 5 minutes
 - **3-10 minutes remaining**: Every 2 minutes
-- **< 3 minutes remaining**: Every 30 seconds
+- **< 3 minutes remaining**: Every 30 seconds (outside blackout only)
 
 ## 🧪 Testing
 

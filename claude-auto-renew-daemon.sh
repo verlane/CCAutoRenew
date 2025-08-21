@@ -270,14 +270,14 @@ main() {
                 # Calculate today's start time
                 today_start_epoch=$(date -d "$current_date $start_hour:$start_minute:00" +%s 2>/dev/null || date -j -f "%Y-%m-%d %H:%M:%S" "$current_date $start_hour:$start_minute:00" +%s)
                 
-                # Check if we're within 2 minutes of any scheduled renewal time (before or after)
+                # Check if we're within 5 minutes of any scheduled renewal time (before or after)
                 for offset in 0 18000 36000 54000; do
                     renewal_time=$((today_start_epoch + offset))
                     time_diff=$((current_epoch - renewal_time))
                     abs_time_diff=${time_diff#-}  # absolute value
                     
-                    # If we're within 2 minutes before or after a renewal time
-                    if [ "$abs_time_diff" -le 120 ]; then
+                    # If we're within 5 minutes before or after a renewal time
+                    if [ "$abs_time_diff" -le 300 ]; then
                         should_renew=true
                         renewal_hour=$(date -d "@$renewal_time" +%H:%M 2>/dev/null || date -r "$renewal_time" +%H:%M)
                         if [ $time_diff -lt 0 ]; then
@@ -285,6 +285,8 @@ main() {
                         else
                             log_message "✅ Scheduled renewal time reached! ($renewal_hour)"
                         fi
+                        # For scheduled renewals, skip emergency renewal check
+                        skip_emergency_check=true
                         break
                     fi
                 done
@@ -365,8 +367,10 @@ main() {
         
         # Perform renewal if needed
         if [ "$should_renew" = true ]; then
-            # Wait a bit to ensure we're in the renewal window
-            sleep 60
+            # For scheduled renewals, don't wait; for emergency renewals, wait a bit
+            if [ "$skip_emergency_check" != true ]; then
+                sleep 60
+            fi
             
             # Try to start session with retries
             local retry_count=0
@@ -456,12 +460,19 @@ main() {
                 # Use the shorter of ccusage time or scheduled time for sleep calculation
                 if [ "$in_blackout" = true ]; then
                     # During blackout period, check more frequently when close to start time
-                    if [ "$scheduled_remaining" -le 600 ]; then  # 10 minutes before start
+                    if [ "$scheduled_remaining" -le 300 ]; then  # 5 minutes before start
+                        sleep_duration=60  # 1 minute
+                    elif [ "$scheduled_remaining" -le 600 ]; then  # 10 minutes before start
                         sleep_duration=120  # 2 minutes
                     else
                         sleep_duration=1800  # 30 minutes
                     fi
                     log_message "Next scheduled renewal in $((scheduled_remaining/60)) minutes (at $(date -d "@$next_renewal_epoch" +%H:%M 2>/dev/null || date -r "$next_renewal_epoch" +%H:%M)), checking again in $((sleep_duration/60)) minutes (blackout period)"
+                # ALWAYS prioritize scheduled renewal times over ccusage
+                elif [ "$scheduled_remaining" -le 300 ]; then
+                    # Very close to scheduled renewal - check every minute regardless of ccusage
+                    sleep_duration=60
+                    log_message "Next scheduled renewal in $((scheduled_remaining/60)) minutes (at $(date -d "@$next_renewal_epoch" +%H:%M 2>/dev/null || date -r "$next_renewal_epoch" +%H:%M)), checking again in $((sleep_duration/60)) minutes"
                 elif [ -n "$minutes_remaining" ] && [ "$minutes_remaining" -gt 0 ]; then
                     # Use ccusage time if it's less than scheduled time
                     if [ "$minutes_remaining" -lt $((scheduled_remaining / 60)) ]; then
@@ -478,12 +489,12 @@ main() {
                         log_message "Next scheduled renewal in $((scheduled_remaining/60)) minutes (at $(date -d "@$next_renewal_epoch" +%H:%M 2>/dev/null || date -r "$next_renewal_epoch" +%H:%M)), checking again in $((sleep_duration/60)) minutes (based on ccusage)"
                     else
                         # Base sleep duration on scheduled time
-                        if [ "$scheduled_remaining" -le 120 ]; then  # 2 minutes
+                        if [ "$scheduled_remaining" -le 300 ]; then  # 5 minutes
                             sleep_duration=60  # 1 minute
                         elif [ "$scheduled_remaining" -le 600 ]; then  # 10 minutes
-                            sleep_duration=300  # 5 minutes
+                            sleep_duration=120  # 2 minutes
                         elif [ "$scheduled_remaining" -le 1800 ]; then  # 30 minutes
-                            sleep_duration=600  # 10 minutes
+                            sleep_duration=300  # 5 minutes
                         else
                             sleep_duration=1800  # 30 minutes max
                         fi
@@ -491,12 +502,12 @@ main() {
                     fi
                 else
                     # No ccusage data, use scheduled time only
-                    if [ "$scheduled_remaining" -le 120 ]; then  # 2 minutes
+                    if [ "$scheduled_remaining" -le 300 ]; then  # 5 minutes
                         sleep_duration=60  # 1 minute
                     elif [ "$scheduled_remaining" -le 600 ]; then  # 10 minutes
-                        sleep_duration=300  # 5 minutes
+                        sleep_duration=120  # 2 minutes
                     elif [ "$scheduled_remaining" -le 1800 ]; then  # 30 minutes
-                        sleep_duration=600  # 10 minutes
+                        sleep_duration=300  # 5 minutes
                     else
                         sleep_duration=1800  # 30 minutes max
                     fi
