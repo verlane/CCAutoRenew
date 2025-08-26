@@ -47,9 +47,13 @@ start_daemon() {
         
         # Store start time
         echo "$START_EPOCH" > "$START_TIME_FILE"
-        print_status "Daemon will start monitoring at: $(date -d "@$START_EPOCH" 2>/dev/null || date -r "$START_EPOCH")"
+        START_HOUR=$(date -d "@$START_EPOCH" +%H 2>/dev/null || date -r "$START_EPOCH" +%H)
+        print_status "Starting daemon with schedule based on $START_HOUR:00"
+        print_status "Daily renewals at: $START_HOUR:00, $(($START_HOUR+5)):00, $(($START_HOUR+10)):00, $(($START_HOUR+15)):00"
     else
-        # Remove any existing start time (start immediately)
+        # Default schedule
+        print_status "Starting daemon with default schedule: 06:00, 11:00, 16:00, 21:00"
+        # Remove any existing start time (use default)
         rm -f "$START_TIME_FILE" 2>/dev/null
     fi
     
@@ -72,7 +76,10 @@ start_daemon() {
             print_status "Daemon started successfully with PID $PID"
             if [ -f "$START_TIME_FILE" ]; then
                 START_EPOCH=$(cat "$START_TIME_FILE")
-                print_status "Will begin auto-renewal at: $(date -d "@$START_EPOCH" 2>/dev/null || date -r "$START_EPOCH")"
+                START_HOUR=$(date -d "@$START_EPOCH" +%H 2>/dev/null || date -r "$START_EPOCH" +%H)
+                print_status "Schedule: $START_HOUR:00, $(($START_HOUR+5)):00, $(($START_HOUR+10)):00, $(($START_HOUR+15)):00"
+            else
+                print_status "Default schedule: 06:00, 11:00, 16:00, 21:00"
             fi
             print_status "Logs: $LOG_FILE"
             return 0
@@ -127,24 +134,8 @@ status_daemon() {
     
     if kill -0 "$PID" 2>/dev/null; then
         print_status "Daemon is running with PID $PID"
-        
-        # Check start time status
-        if [ -f "$START_TIME_FILE" ]; then
-            start_epoch=$(cat "$START_TIME_FILE")
-            current_epoch=$(date +%s)
-            
-            if [ "$current_epoch" -ge "$start_epoch" ]; then
-                print_status "Status: ✅ ACTIVE - Auto-renewal monitoring enabled"
-            else
-                time_until_start=$((start_epoch - current_epoch))
-                hours=$((time_until_start / 3600))
-                minutes=$(((time_until_start % 3600) / 60))
-                print_status "Status: ⏰ WAITING - Will activate in ${hours}h ${minutes}m"
-                print_status "Start time: $(date -d "@$start_epoch" 2>/dev/null || date -r "$start_epoch")"
-            fi
-        else
-            print_status "Status: ✅ ACTIVE - Auto-renewal monitoring enabled"
-        fi
+        print_status "Status: ✅ ACTIVE - Auto-renewal monitoring enabled"
+        print_status "Fixed schedule: 06:00, 11:00, 16:00, 21:00 daily"
         
         # Show recent activity
         if [ -f "$LOG_FILE" ]; then

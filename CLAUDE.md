@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CC AutoRenew is a bash-based daemon system that automatically renews Claude Code 5-hour usage blocks to prevent gaps and session burning. It integrates with the `ccusage` CLI tool for accurate timing and provides scheduled start times to optimize when monitoring begins.
+CC AutoRenew is a bash-based daemon system that automatically renews Claude Code 5-hour usage blocks to prevent gaps and session burning. It uses fixed time-based scheduling to ensure renewals happen exactly when needed.
 
 ## Key Commands
 
@@ -48,9 +48,9 @@ CC AutoRenew is a bash-based daemon system that automatically renews Claude Code
    - Provides log viewing functionality
 
 2. **claude-auto-renew-daemon.sh** - Core daemon process that runs continuously
-   - Monitors Claude usage via ccusage or time-based fallback
-   - Implements smart check intervals (10min → 2min → 30sec as renewal approaches)
-   - Handles scheduled start times (WAITING → ACTIVE state transitions)
+   - Monitors based on fixed time schedule (e.g., 05:00, 10:00, 15:00, 20:00)
+   - Implements smart check intervals (30min normally → 1min near renewal)
+   - Handles custom start times via --at parameter
    - Executes renewal by running `echo "hi" | claude`
 
 3. **Key State Files** (in $HOME)
@@ -67,17 +67,14 @@ CC AutoRenew is a bash-based daemon system that automatically renews Claude Code
 
 ### Check Intervals
 
-The daemon uses progressive check intervals based on time remaining:
-- Normal: 600s (10 minutes)
-- <30 minutes: 120s (2 minutes)  
-- <5 minutes: 30s (30 seconds)
-- Post-renewal: 300s (5 minute cooldown)
+The daemon uses simple check intervals:
+- Normal: 1800s (30 minutes)
+- Near renewal (within 5 minutes): 60s (1 minute)
 
 ### Integration Points
 
-- **ccusage**: External tool for accurate Claude usage tracking (`ccusage blocks`)
 - **Claude CLI**: Must be installed and authenticated (`echo "hi" | claude`)
-- Falls back to time-based checking if ccusage unavailable
+- **Time-based scheduling**: Uses system time for precise renewal scheduling
 
 ## Important Behaviors
 

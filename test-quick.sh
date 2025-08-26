@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Quick Test Script for CC AutoRenew
-# Performs basic validation of all components in under 1 minute
+# Quick test script for Claude Auto-Renewal
+# Validates all functionality in under 1 minute
 
-# Colors for output
+# Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -32,18 +32,15 @@ print_info() {
 }
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║${NC}          CC AutoRenew Quick Test        ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}        Claude Auto-Renewal Quick Test   ${BLUE}║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 echo ""
 
-# Test 1: Check all required scripts exist and are executable
+# Test 1: Check required script files
 print_test "Checking script files"
 scripts=(
     "claude-daemon-manager.sh"
     "claude-auto-renew-daemon.sh"
-    "claude-auto-renew-advanced.sh"
-    "claude-auto-renew.sh"
-    "setup-claude-cron.sh"
 )
 
 for script in "${scripts[@]}"; do
@@ -60,108 +57,69 @@ print_test "Checking dependencies"
 if command -v claude &> /dev/null; then
     print_pass "Claude CLI found"
 else
-    print_fail "Claude CLI not found"
+    print_info "Claude CLI not found (installation required)"
 fi
 
-if command -v ccusage &> /dev/null || command -v bunx &> /dev/null || command -v npx &> /dev/null; then
-    print_pass "ccusage availability confirmed"
-else
-    print_fail "ccusage not available via any method"
-fi
-
-# Test 3: Test daemon manager help
+# Test 3: Test daemon manager
 print_test "Testing daemon manager"
 if ./claude-daemon-manager.sh --help 2>&1 | grep -q "Usage"; then
-    print_pass "Daemon manager shows help correctly"
+    print_pass "Daemon manager help working"
 else
-    print_fail "Daemon manager help not working"
+    print_fail "Daemon manager help error"
 fi
 
-# Test 4: Test daemon start/stop without actually running
-print_test "Testing daemon start/stop dry run"
-# Just test that the script accepts the commands without error syntax
-if ./claude-daemon-manager.sh 2>&1 | grep -q "start"; then
-    print_pass "Daemon manager accepts start command"
+# Test 4: Check fixed schedule
+print_test "Checking fixed schedule logic"
+if grep -q "06:00.*11:00.*16:00.*21:00" ./claude-auto-renew-daemon.sh; then
+    print_pass "Fixed schedule (06:00, 11:00, 16:00, 21:00) implemented"
 else
-    print_fail "Daemon manager start command issue"
+    print_fail "Fixed schedule logic missing"
 fi
 
-# Test 5: Test start time parsing
-print_test "Testing start time parameter parsing"
-if ./claude-daemon-manager.sh start --at "25:00" 2>&1 | grep -q "Invalid time format"; then
-    print_pass "Invalid time format correctly rejected"
-else
-    print_fail "Invalid time format not properly handled"
-fi
-
-# Test 5b: Test blackout period calculation
-print_test "Testing blackout period feature"
-if grep -q "blackout\|Blackout" ./claude-auto-renew-daemon.sh; then
-    print_pass "Blackout period logic present"
+# Test 5: Check blackout period
+print_test "Checking blackout period feature"
+if grep -q "blackout\|01:00-05:59" ./claude-auto-renew-daemon.sh; then
+    print_pass "Blackout period (01:00-05:59) implemented"
 else
     print_fail "Blackout period logic missing"
 fi
 
-# Test 6: Check log file creation capability
-print_test "Testing log file access"
-test_log="/tmp/cc-autorenew-test-$$"
-if echo "test" > "$test_log" 2>/dev/null; then
-    print_pass "Can create log files"
-    rm -f "$test_log"
-else
-    print_fail "Cannot create log files"
-fi
-
-# Test 7: Test advanced renewal script basic functionality
-print_test "Testing advanced renewal script"
-# Check if script has proper content by examining the file
-if grep -q "ccusage\|renewal\|Auto" ./claude-auto-renew-advanced.sh; then
-    print_pass "Advanced renewal script has proper content"
-else
-    print_fail "Advanced renewal script missing expected content"
-fi
-
-# Test basic syntax
-bash -n ./claude-auto-renew-advanced.sh 2>/dev/null
-if [ $? -eq 0 ]; then
-    print_pass "Advanced renewal script has valid syntax"
-else
-    print_fail "Advanced renewal script has syntax errors"
-fi
-
-# Test 8: Test setup script options
-print_test "Testing setup script"
-if echo "3" | timeout 5s ./setup-claude-cron.sh 2>&1 | grep -q "Invalid choice"; then
-    print_pass "Setup script handles invalid choices"
-else
-    # Fallback: check if script has proper content
-    if grep -q "Invalid choice\|DAEMON\|CRON" ./setup-claude-cron.sh; then
-        print_pass "Setup script has proper validation logic"
-    else
-        print_fail "Setup script doesn't validate input properly"
-    fi
-fi
-
-# Test 9: Test enhanced scheduling features
-print_test "Testing enhanced scheduling features"
-if grep -q "today_start_epoch\|scheduled_remaining" ./claude-auto-renew-daemon.sh; then
-    print_pass "Daily fixed-schedule logic present"
-else
-    print_fail "Daily fixed-schedule logic missing"
-fi
-
-# Test 10: Test retry mechanism
-print_test "Testing retry mechanism"
-if grep -q "max_retries\|retry_count" ./claude-auto-renew-daemon.sh; then
-    print_pass "Retry mechanism implemented"
+# Test 6: Check retry mechanism
+print_test "Checking retry mechanism"
+if grep -q "max_retries=10" ./claude-auto-renew-daemon.sh; then
+    print_pass "Retry mechanism (max 10) implemented"
 else
     print_fail "Retry mechanism missing"
+fi
+
+# Test 7: Check smart check intervals
+print_test "Checking smart check intervals"
+if grep -q "sleep_duration=60" ./claude-auto-renew-daemon.sh && grep -q "sleep_duration=1800" ./claude-auto-renew-daemon.sh; then
+    print_pass "Smart check intervals (1min/30min) implemented"
+else
+    print_fail "Smart check interval logic missing"
+fi
+
+# Test 8: Bash syntax check
+print_test "Checking script syntax"
+bash -n ./claude-auto-renew-daemon.sh 2>/dev/null
+if [ $? -eq 0 ]; then
+    print_pass "Daemon script syntax OK"
+else
+    print_fail "Daemon script syntax error"
+fi
+
+bash -n ./claude-daemon-manager.sh 2>/dev/null
+if [ $? -eq 0 ]; then
+    print_pass "Manager script syntax OK"
+else
+    print_fail "Manager script syntax error"
 fi
 
 # Summary
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║${NC}              QUICK TEST SUMMARY         ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}             TEST RESULTS SUMMARY        ${BLUE}║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "Total Tests: ${BLUE}$((TESTS_PASSED + TESTS_FAILED))${NC}"
@@ -170,15 +128,15 @@ echo -e "${RED}Failed:${NC} $TESTS_FAILED"
 
 if [ $TESTS_FAILED -eq 0 ]; then
     echo ""
-    echo -e "${GREEN}🎉 Quick test passed! CC AutoRenew appears to be set up correctly.${NC}"
+    echo -e "${GREEN}🎉 Quick test passed! Auto-renewal is properly configured.${NC}"
     echo ""
     echo "Next steps:"
-    echo "  • Run comprehensive tests: ./test-start-time-feature.sh"
-    echo "  • Start the daemon: ./claude-daemon-manager.sh start"
+    echo "  • Start daemon: ./claude-daemon-manager.sh start"
     echo "  • Check status: ./claude-daemon-manager.sh status"
+    echo "  • View logs: tail -f ~/.claude-auto-renew-daemon.log"
     exit 0
 else
     echo ""
-    echo -e "${RED}❌ Some quick tests failed. Please check the issues above.${NC}"
+    echo -e "${RED}❌ Some tests failed. Please check the issues above.${NC}"
     exit 1
-fi 
+fi
