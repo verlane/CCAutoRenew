@@ -7,17 +7,17 @@
 Claude Code operates on 5-hour blocks. Missing renewal windows creates gaps in your coding time.
 
 **CC AutoRenew Solution:**
-- 🔄 **Automatic Renewal** - Never miss a renewal window
+- 🔄 **Automatic Renewal** - Never miss a renewal window with reliable scheduling
 - ⏰ **Custom Scheduling** - Set your preferred daily schedule (e.g., 05:00, 10:00, 15:00, 20:00)
 - 🚫 **Smart Blackout** - Prevents renewals 5 hours before your start time
-- 🎯 **Perfect Timing** - Renewals happen exactly when you need them
+- 🎯 **Progressive Check Intervals** - Checks more frequently as renewal time approaches
 
 ## ✨ Features
 
 - 🔄 **Automatic Renewal** - Starts Claude sessions at fixed 5-hour intervals
-- ⏰ **Fixed Schedule** - Renews at 06:00, 11:00, 16:00, 21:00 daily
-- 🚫 **Blackout Period Protection** - No renewals between 01:00-05:59 to preserve 06:00 slot
-- 🎯 **Smart Check Intervals** - Checks every 30 minutes, every minute near renewal time
+- ⏰ **Customizable Schedule** - Default 06:00, 11:00, 16:00, 21:00 or set your own with --at
+- 🚫 **Blackout Period Protection** - Prevents renewals 5 hours before start time
+- 🎯 **Progressive Check Intervals** - 30min → 5min → 2min → 1min as renewal approaches
 - 📝 **Detailed Logging** - Track all renewal activities with timestamps
 - 🛡️ **Robust Retry Logic** - Up to 10 retry attempts with 1-minute intervals
 - 🖥️ **Cross-platform** - Works on macOS and Linux
@@ -78,9 +78,9 @@ chmod +x *.sh
 - Blackout: 01:00-04:59
 
 **Features**:
-- ±5 minute renewal window
+- ±5 minute renewal window for reliability
 - 10 retry attempts if renewal fails
-- Smart checking: 30min normally, 1min near renewal time
+- Progressive checking: 30min → 5min → 2min → 1min as renewal approaches
 
 ## 🧪 Testing
 

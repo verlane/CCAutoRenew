@@ -172,6 +172,12 @@ main() {
             time_diff=$((current_epoch - renewal_epoch))
             abs_time_diff=${time_diff#-}  # absolute value
             
+            # Debug: log when close to renewal time
+            if [ "$abs_time_diff" -le 600 ] && [ "$abs_time_diff" -gt 300 ]; then
+                renewal_hour=$(date -d "@$renewal_epoch" +%H:%M 2>/dev/null || date -r "$renewal_epoch" +%H:%M)
+                log_message "Approaching renewal time $renewal_hour ($(($abs_time_diff/60)) minutes away)"
+            fi
+            
             # If we're within 5 minutes before or after a renewal time
             if [ "$abs_time_diff" -le 300 ]; then
                 # Skip if in blackout period and this is the first renewal
@@ -237,11 +243,15 @@ main() {
         # Calculate how long to sleep
         time_to_next_renewal=$((next_renewal_epoch - current_epoch))
         
-        # If within 5 minutes of next renewal, check every minute
+        # Progressive check intervals as we approach renewal time
         if [ $time_to_next_renewal -le 300 ]; then
-            sleep_duration=60  # 1 minute
+            sleep_duration=60  # 1 minute when very close
+        elif [ $time_to_next_renewal -le 600 ]; then
+            sleep_duration=120  # 2 minutes when within 10 minutes
+        elif [ $time_to_next_renewal -le 1800 ]; then
+            sleep_duration=300  # 5 minutes when within 30 minutes
         else
-            sleep_duration=1800  # 30 minutes
+            sleep_duration=1800  # 30 minutes otherwise
         fi
         
         # Log status
